@@ -1,0 +1,76 @@
+@Metadata.layer: #CORE
+
+@Search.searchable: true
+annotate entity ZC_Bill_Item with
+{
+  @UI.facet: [ {
+    id:       'BillingDocItem',
+    purpose:  #STANDARD,
+    type:     #IDENTIFICATION_REFERENCE,
+    label:    'Item',
+    position: 10
+  }]
+  @EndUserText.label: 'Billing Document'
+  @UI: {
+    lineItem:       [ { position: 10 } ],
+    identification: [ { position: 10 } ],
+    selectionField: [ { position: 10 } ]
+  }
+  BillId;
+
+  @EndUserText.label: 'Item Number'
+  @UI: {
+    lineItem:       [ { position: 20 } ],
+    identification: [ { position: 20 } ],
+    selectionField: [ { position: 20 } ]
+  }
+  ItemNo;
+
+  @EndUserText.label: 'Material'
+  @UI: {
+    lineItem:       [ { position: 30 } ],
+    identification: [ { position: 30 } ]
+  }
+  @Search.defaultSearchElement: true
+  MaterialId;
+
+  @EndUserText.label: 'Description'
+  @UI: {
+    lineItem:       [ { position: 40 } ],
+    identification: [ { position: 40 } ]
+  }
+  @Search.defaultSearchElement: true
+  Description;
+
+  @EndUserText.label: 'Quantity'
+  @UI: {
+    lineItem:       [ { position: 50 } ],
+    identification: [ { position: 50 } ]
+  }
+  Quantity;
+
+  @EndUserText.label: 'Unit of Measure'
+  @UI: {
+    lineItem:       [ { position: 60 } ],
+    identification: [ { position: 60 } ]
+  }
+  Uom;
+
+  @EndUserText.label: 'Amount'
+  @UI: {
+    lineItem:       [ { position: 70 } ],
+    identification: [ { position: 70 } ]
+  }
+  ItemAmount;
+
+  @EndUserText.label: 'Currency'
+  @UI: {
+    lineItem:       [ { position: 80 } ],
+    identification: [ { position: 80 } ]
+  }
+  @Consumption.valueHelpDefinition: [{ entity: {
+                                     name: 'I_CURRENCY',
+                                     element: 'Currency'
+                                 }, useForValidation: true }]
+  Currency;
+}

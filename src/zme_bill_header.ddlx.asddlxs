@@ -1,0 +1,78 @@
+@Metadata.layer: #CORE
+@UI: {
+  headerInfo: { typeName: 'Billing Document Header',
+                typeNamePlural: 'Billing Documents',
+                title: { type: #STANDARD, label: 'Billing Document', value: 'BillId' }
+                 }
+              }
+@Search.searchable: true
+annotate entity ZC_BILL_HEADER with
+{
+  @UI.facet: [ { id:              'BillingDocHead',
+                 purpose:         #STANDARD,
+                 type:            #IDENTIFICATION_REFERENCE,
+                 label:           'Header',
+                 position:        10 },
+
+               { id:            'BillingDocItem',
+                 purpose:       #STANDARD,
+                 type:          #LINEITEM_REFERENCE,
+                 label:         'Items',
+                 position:      20,
+                 targetElement: '_item'
+
+                } ]
+  @EndUserText.label: 'Billing Document'
+  @UI: {  lineItem:       [ { position: 10 } ],
+          identification: [ { position: 10 },
+                            { type: #FOR_ACTION, dataAction: 'addDiscount', label: 'Add discount' }
+                          ],
+          selectionField: [ { position: 10 } ] }
+  @Search.defaultSearchElement: true
+  BillId;
+  @EndUserText.label: 'Billing Document Type'
+  @UI: {  lineItem:       [ { position: 20 } ],
+          identification: [ { position: 20 } ],
+          selectionField: [ { position: 20 } ] }
+  @Search.defaultSearchElement: true
+  @Consumption.valueHelpDefinition: [{ entity: {
+                                           name: 'ZI_BILL_DOC_TYPE_VH',
+                                           element: 'BillType'
+                                       }, useForValidation: true }]
+  BillType;
+  @EndUserText.label: 'Billing Date'
+  @UI: {  lineItem:       [ { position: 30 } ] ,
+          identification: [ { position: 30 } ]}
+  BillDate;
+  @EndUserText.label: 'Customer'
+  @UI: {  lineItem:       [ { position: 40 } ] ,
+          identification: [ { position: 40 } ]}
+  @Search.defaultSearchElement: true
+  CustomerId;
+  @EndUserText.label: 'Net Amount'
+  @UI: {  lineItem:       [ { position: 50 } ] ,
+          identification: [ { position: 50 } ]}
+  NetAmount;
+  @EndUserText.label: 'Currency'
+  @UI: {  lineItem:       [ { position: 60 } ] ,
+          identification: [ { position: 60 } ]}
+  @Search.defaultSearchElement: true
+  @Consumption.valueHelpDefinition: [{ entity: {
+                                       name: 'I_CURRENCY',
+                                       element: 'Currency'
+                                   }, useForValidation: true }]
+  Currency;
+  @EndUserText.label: 'Sales Organization'
+  @UI: {  lineItem:       [ { position: 70 } ] ,
+          identification: [ { position: 70 } ]}
+
+  @Search.defaultSearchElement: true
+  SalesOrg;
+
+  @Search.defaultSearchElement: true
+  @Search.fuzzinessThreshold: 0.8
+  BillText;
+
+  @Search.defaultSearchElement: true
+  _item;
+}

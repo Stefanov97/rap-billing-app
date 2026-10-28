@@ -1,0 +1,5 @@
+@EndUserText.label: 'Service Definition of Bill Document Header'
+define service ZC_UI_BILL_HEADER {
+  expose ZC_BILL_HEADER as BillingDocumentHeader;
+  expose ZC_Bill_Item   as BillingDocumentItem;
+}

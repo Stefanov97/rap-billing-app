@@ -1,0 +1,101 @@
+managed implementation in class zbp_i_bill_header unique;
+strict ( 2 );
+with draft;
+
+define behavior for ZI_BILL_HEADER
+persistent table zbill_header
+draft table zdbill_head
+lock master total etag LastChangedAt
+//lock master
+authorization master ( instance, global )
+//authorization master ( instance )
+etag master LocalLastChangedAt
+//early numbering
+late numbering
+{
+  create;
+  update;
+  delete;
+
+  validation validateCurrency on save { create; field currency; }
+  draft action Edit;
+  draft action Resume;
+  draft action Activate optimized;
+  draft action Discard;
+  draft determine action Prepare
+  {
+    //validations and determinations for the draft instance here
+    validation validateCurrency;
+  }
+
+  static action uploadExcel parameter za_bill_upload;
+  action ( features : instance ) addDiscount parameter ZA_DISCOUNT result [1] $self;
+  internal action recalculateNetAmount;
+  //  field ( readonly : update, mandatory : create ) BillId;
+  field ( readonly ) BillId;
+
+  determination propagateCurrency on modify { field Currency; }
+  side effects
+  {
+    field Currency affects field NetAmount, entity _item;
+  }
+
+  association _item { create; with draft; }
+  //    association _item { create; }
+
+  mapping for zbill_header
+    {
+      BillId             = bill_id;
+      BillType           = bill_type;
+      BillDate           = bill_date;
+      CustomerId         = customer_id;
+      NetAmount          = net_amount;
+      Currency           = currency;
+      SalesOrg           = sales_org;
+      CreatedBy          = createdby;
+      CreateDat          = createdat;
+      LastChangedBy      = lastchangedby;
+      LastChangedAt      = lastchangedat;
+      LocalLastChangedAt = locallastchangedat;
+    }
+}
+
+define behavior for zi_bill_item
+persistent table zbill_item
+draft table zdbill_item
+lock dependent by _header
+authorization dependent by _header
+etag master LocalLastChangedAt
+late numbering
+{
+  update;
+  delete;
+  //  field ( readonly : update, mandatory : create ) BillId, ItemNo;
+  field ( readonly ) BillId, ItemNo, Currency;
+  association _header { with draft; }
+  //    association _header { }
+  determination recalcHeaderNet on modify { create; field ItemAmount; }
+  determination setCurrencyFromHeader on modify { create; }
+  determination recalcHeaderNetOnDelete on modify { delete; }
+
+  side effects
+  {
+    field ItemAmount affects field _header.NetAmount;
+  }
+  mapping for zbill_item
+    {
+      BillId             = bill_id;
+      ItemNo             = item_no;
+      MaterialId         = material_id;
+      Description        = description;
+      Quantity           = quantity;
+      ItemAmount         = item_amount;
+      Currency           = currency;
+      Uom                = uom;
+      CreatedBy          = createdby;
+      CreateDat          = createdat;
+      LastChangedBy      = lastchangedby;
+      LastChangedAt      = last_changed_at;
+      LocalLastChangedAt = local_last_changed_at;
+    }
+}

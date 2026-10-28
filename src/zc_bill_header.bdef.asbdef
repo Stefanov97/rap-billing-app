@@ -1,0 +1,31 @@
+projection;
+strict ( 2 );
+use draft;
+use side effects;
+
+define behavior for ZC_BILL_HEADER //alias <alias_name>
+{
+  use create;
+  use update;
+  use delete;
+
+  use action Edit;
+  use action Resume;
+  use action Activate;
+  use action Discard;
+  use action Prepare;
+  use action uploadExcel;
+  use action addDiscount;
+
+  use association _item { create; with draft; }
+  //  use association _item { create; }
+}
+
+define behavior for ZC_Bill_Item
+{
+  use update;
+  use delete;
+
+  use association _header { with draft; }
+  //  use association _header { }
+}
