@@ -45,7 +45,7 @@ Main ABAP objects:
 
 1. Install [abapGit](https://docs.abapgit.org) in your system.
 2. Create a package, for example `$ZBILLING_APPS`.
-3. Import the repository into the package (online, or offline from a ZIP of this repository).
+3. Import the repository into the package with **New Online** and the repository URL. For an offline import, unzip the ZIP downloaded from GitHub and zip its contents again, so that `.abapgit.xml` is at the root of the ZIP.
 4. Activate all objects.
 5. Open the service binding `ZC_UI_BILLHEADER_V2` in ADT and publish it.
 
