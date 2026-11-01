@@ -37,7 +37,6 @@ CLASS lhc_zi_bill_item IMPLEMENTATION.
        RESULT DATA(lt_header)
        LINK DATA(lt_link).
 
-    " source = айтем, target = хедър
     LOOP AT lt_link INTO DATA(ls_link).
       DATA(lv_item_cur) = lt_item[ KEY id %tky = ls_link-source-%tky ]-Currency.
       DATA(lv_head_cur) = lt_header[ KEY id %tky = ls_link-target-%tky ]-Currency.
@@ -58,7 +57,6 @@ CLASS lhc_zi_bill_item IMPLEMENTATION.
   METHOD recalcHeaderNetOnDelete.
     DATA lt_header TYPE TABLE FOR ACTION IMPORT zi_bill_header~recalculateNetAmount.
 
-    " ключът на хедъра се взима директно от ключа на изтрития айтем
     LOOP AT keys INTO DATA(ls_key) WHERE billid IS NOT INITIAL.
       APPEND VALUE #( %is_draft = ls_key-%is_draft
                       billid    = ls_key-billid ) TO lt_header.
@@ -208,29 +206,51 @@ CLASS lhc_ZI_BILL_HEADER IMPLEMENTATION.
 
     DATA(lv_file) = VALUE xstring( keys[ 1 ]-%param-FileContent OPTIONAL ).
     IF lv_file IS INITIAL.
-      " съобщение в reported и RETURN
+      APPEND VALUE #( %cid = keys[ 1 ]-%cid ) TO failed-zi_bill_header.
+      APPEND VALUE #( %cid = keys[ 1 ]-%cid
+                   %msg = new_message_with_text(
+                            severity = if_abap_behv_message=>severity-error
+                            text     = 'The selected file is empty' ) )
+          TO reported-zi_bill_header.
       RETURN.
     ENDIF.
 
-    " --- четене на Excel (XCO) ---
-    DATA(lo_worksheet) =
-              xco_cp_xlsx=>document->for_file_content( lv_file )->read_access( )->get_workbook( )->worksheet->at_position( 1 ).
-
+    TRY.
+        DATA(lo_worksheet) =
+                  xco_cp_xlsx=>document->for_file_content( lv_file )->read_access( )->get_workbook( )->worksheet->at_position( 1 ).
+      CATCH cx_root INTO DATA(lx_error).
+        APPEND VALUE #( %cid = keys[ 1 ]-%cid ) TO failed-zi_bill_header.
+        APPEND VALUE #( %cid = keys[ 1 ]-%cid
+                        %msg = new_message_with_text(
+                                 severity = if_abap_behv_message=>severity-error
+                                 text     = |Excel file could not be read: { lx_error->get_text( ) }| ) )
+               TO reported-zi_bill_header.
+        RETURN.
+    ENDTRY.
     DATA(lo_pattern) = xco_cp_xlsx_selection=>pattern_builder->simple_from_to(
-                      )->from_row( xco_cp_xlsx=>coordinate->for_numeric_value( 2 ) " без заглавния ред
+                      )->from_row( xco_cp_xlsx=>coordinate->for_numeric_value( 2 )
                       )->get_pattern( ).
 
     lo_worksheet->select( lo_pattern )->row_stream( )->operation->write_to( REF #( lt_rows )
       )->set_value_transformation( xco_cp_xlsx_read_access=>value_transformation->string_value
       )->if_xco_xlsx_ra_operation~execute( ).
 
-    " --- header-и и позиции ---
-    DATA lt_headers TYPE TABLE FOR CREATE zi_bill_header.
-    DATA lt_items   TYPE TABLE FOR CREATE zi_bill_header\_item.
-    DATA lv_n TYPE i.
+    IF lt_rows IS INITIAL.
+      APPEND VALUE #( %cid = keys[ 1 ]-%cid ) TO failed-zi_bill_header.
+      APPEND VALUE #( %cid = keys[ 1 ]-%cid
+                      %msg = new_message_with_text(
+                               severity = if_abap_behv_message=>severity-error
+                               text     = 'The file contains no data rows' ) )
+             TO reported-zi_bill_header.
+      RETURN.
+    ENDIF.
+
+    DATA: lt_headers TYPE TABLE FOR CREATE zi_bill_header,
+          lt_items   TYPE TABLE FOR CREATE zi_bill_header\_item,
+          lv_n       TYPE i.
 
     LOOP AT lt_rows INTO DATA(ls_row).
-    lv_n = lv_n + 1.
+      lv_n = lv_n + 1.
       IF NOT line_exists( lt_headers[ KEY cid %cid = ls_row-doc_ref ] ).
         APPEND VALUE #( %cid       = ls_row-doc_ref
                         %is_draft = if_abap_behv=>mk-on
@@ -253,7 +273,6 @@ CLASS lhc_ZI_BILL_HEADER IMPLEMENTATION.
                       Currency    = ls_row-currency ) TO <fs_item>-%target.
     ENDLOOP.
 
-    " --- създаване ---
     MODIFY ENTITIES OF zi_bill_header IN LOCAL MODE
       ENTITY zi_bill_header
         CREATE FIELDS ( BillType BillDate CustomerId SalesOrg Currency )
@@ -387,21 +406,19 @@ CLASS lhc_ZI_BILL_HEADER IMPLEMENTATION.
         RESULT DATA(lt_item)
         LINK DATA(lt_link).
 
-    " source = хедър, target = айтем
+
     LOOP AT lt_link INTO DATA(ls_link).
       DATA(ls_head) = lt_header[ KEY id %tky = ls_link-source-%tky ].
       DATA(ls_item) = lt_item[ KEY id %tky = ls_link-target-%tky ].
 
-      " вече е в правилната валута -> нищо (пази от двойно конвертиране)
       CHECK ls_item-Currency <> ls_head-Currency.
 
       DATA(lv_amount) = ls_item-ItemAmount.
 
-      " конвертираме само ако има от какво и към какво
       IF ls_item-Currency IS NOT INITIAL AND ls_head-Currency IS NOT INITIAL.
         CALL FUNCTION 'CONVERT_TO_LOCAL_CURRENCY'
           EXPORTING
-            date             = sy-datum          " или датата на документа
+            date             = sy-datum
             foreign_amount   = ls_item-ItemAmount
             foreign_currency = ls_item-Currency
             local_currency   = ls_head-Currency
@@ -418,7 +435,7 @@ CLASS lhc_ZI_BILL_HEADER IMPLEMENTATION.
                                    severity = if_abap_behv_message=>severity-error
                                    text     = |No exchange rate { ls_item-Currency } -> { ls_head-Currency }| ) )
             TO reported-zi_bill_header.
-          CONTINUE.   " айтемът остава в старата валута
+          CONTINUE.
         ENDIF.
       ENDIF.
 

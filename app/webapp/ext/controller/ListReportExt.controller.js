@@ -1,20 +1,20 @@
 sap.ui.define([
   "sap/m/Dialog", "sap/m/Button", "sap/ui/unified/FileUploader",
-  "sap/m/MessageToast", "sap/m/MessageBox"
-], function (Dialog, Button, FileUploader, MessageToast, MessageBox) {
+  "sap/m/MessageToast", "sap/m/MessageBox", "sap/m/Label"
+], function (Dialog, Button, FileUploader, MessageToast, MessageBox, Label) {
   "use strict";
 
- function readAsHex(oFile) {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(
-      Array.from(new Uint8Array(r.result), b => b.toString(16).padStart(2, "0"))
-        .join("").toUpperCase()
-    );
-    r.onerror = reject;
-    r.readAsArrayBuffer(oFile);
-  });
-}
+  function readAsHex(oFile) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(
+        Array.from(new Uint8Array(r.result), b => b.toString(16).padStart(2, "0"))
+          .join("").toUpperCase()
+      );
+      r.onerror = reject;
+      r.readAsArrayBuffer(oFile);
+    });
+  }
 
   return {
     onExcelUpload: function () {
@@ -24,34 +24,40 @@ sap.ui.define([
 
       const oDialog = new Dialog({
         title: "Upload from Excel",
-        content: [new FileUploader({
-          width: "100%",
-          fileType: ["xlsx"],
-          change: e => { oFile = e.getParameter("files")[0]; }
-        })],
+        contentWidth: "28rem",
+        content: [
+          new Label({ text: "Excel file (.xlsx)", labelFor: "excelUploader" }),
+          new FileUploader("excelUploader", {
+            width: "100%",
+            fileType: ["xlsx"],
+            placeholder: "No file selected",
+            buttonText: "Browse",
+            change: e => { oFile = e.getParameter("files")[0]; }
+          })
+        ],
         beginButton: new Button({
           text: "Upload", type: "Emphasized",
           press: async () => {
-            if (!oFile) { MessageToast.show("Избери файл"); return; }
+            if (!oFile) { MessageToast.show("Choose File"); return; }
             oDialog.setBusy(true);
-            const sBase64 = await readAsHex(oFile);
-            oModel.callFunction("/uploadExcel", {   // <-- името на function import-а
+            const sHex = await readAsHex(oFile);
+            oModel.callFunction("/uploadExcel", {  
               method: "POST",
               urlParameters: {
-                FileContent: sBase64,
+                FileContent: sHex,
                 MimeType: oFile.type,
                 FileName: oFile.name
               },
               success: () => {
                 oDialog.setBusy(false);
-                MessageToast.show("Документите са създадени");
+                MessageToast.show("Documents we created in draft mode.");
                 oDialog.close();
                 oExtAPI.refreshTable();
               },
               error: oErr => {
                 oDialog.setBusy(false);
                 let sMsg = oErr.message;
-                try { sMsg = JSON.parse(oErr.responseText).error.message.value; } catch (e) {}
+                try { sMsg = JSON.parse(oErr.responseText).error.message.value; } catch (e) { }
                 MessageBox.error(sMsg);
               }
             });
@@ -60,6 +66,7 @@ sap.ui.define([
         endButton: new Button({ text: "Cancel", press: () => oDialog.close() }),
         afterClose: () => oDialog.destroy()
       });
+      oDialog.addStyleClass("sapUiContentPadding");
       oDialog.open();
     }
   };
