@@ -50,7 +50,7 @@ sap.ui.define([
               },
               success: () => {
                 oDialog.setBusy(false);
-                MessageToast.show("Documents we created in draft mode.");
+                MessageToast.show("Documents were created in draft mode.");
                 oDialog.close();
                 oExtAPI.refreshTable();
               },
