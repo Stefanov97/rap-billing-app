@@ -71,7 +71,8 @@ late numbering
   update;
   delete;
   //  field ( readonly : update, mandatory : create ) BillId, ItemNo;
-  field ( readonly ) BillId, ItemNo, Currency;
+  field ( readonly ) BillId, ItemNo;
+  field ( features : instance ) Currency;
   association _header { with draft; }
   //    association _header { }
   determination recalcHeaderNet on modify { create; field ItemAmount; }

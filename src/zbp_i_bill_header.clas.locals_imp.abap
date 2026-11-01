@@ -8,6 +8,8 @@ CLASS lhc_zi_bill_item DEFINITION INHERITING FROM cl_abap_behavior_handler.
       IMPORTING keys FOR zi_bill_item~setCurrencyFromHeader.
     METHODS recalcHeaderNetOnDelete FOR DETERMINE ON MODIFY
       IMPORTING keys FOR zi_bill_item~recalcHeaderNetOnDelete.
+    METHODS get_instance_features FOR INSTANCE FEATURES
+      IMPORTING keys REQUEST requested_features FOR zi_bill_item RESULT result.
 
 ENDCLASS.
 
@@ -70,6 +72,12 @@ CLASS lhc_zi_bill_item IMPLEMENTATION.
     MODIFY ENTITIES OF zi_bill_header IN LOCAL MODE
       ENTITY zi_bill_header
         EXECUTE recalculateNetAmount FROM lt_header.
+  ENDMETHOD.
+
+  METHOD get_instance_features.
+    result = VALUE #( FOR ls_key IN keys
+                        ( %tky            = ls_key-%tky
+                          %field-Currency = if_abap_behv=>fc-f-read_only ) ).
   ENDMETHOD.
 
 ENDCLASS.

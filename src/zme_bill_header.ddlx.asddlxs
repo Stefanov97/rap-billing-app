@@ -23,7 +23,7 @@ annotate entity ZC_BILL_HEADER with
 
                 } ]
   @EndUserText.label: 'Billing Document'
-  @UI: {  lineItem:       [ { position: 10 } ],
+  @UI: {  lineItem:       [ { position: 10 }],
           identification: [ { position: 10 },
                             { type: #FOR_ACTION, dataAction: 'addDiscount', label: 'Add discount' }
                           ],
